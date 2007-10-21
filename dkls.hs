@@ -98,13 +98,15 @@ procImage _ _ _ _ = fail "Invalid procImage args"
 
 fmtCap :: String -> Maybe String -> IO ()
 fmtCap _ Nothing = return ()
+fmtCap label (Just "") = return ()
 fmtCap label (Just captxt) = 
     do putStr label
        (hin, hout, herr, pid) <- runInteractiveProcess "fmt"
           ["-w", show linewidth] Nothing Nothing
        forkIO $ hPutStr hin captxt
        c <- hGetContents hout
-       putStr c
+       let clines = lines c
+       putStr ((unlines . map ((replicate (length label) ' ') ++) . lines) c)
        unless (isSuffixOf "\n" c) (putStrLn "")
        rc <- waitForProcess pid
        case rc of
