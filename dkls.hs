@@ -84,7 +84,7 @@ procAlbum dbh tags album =
 
 procImage :: Connection -> TagMap -> Album -> [SqlValue] -> IO ()
 procImage dbh tags album [idsv, namesv, captionsv, datetimesv] =
-    do putStrLn $ "    " ++ (replicate 60 '-')
+    do putStrLn $ "    " ++ (replicate 65 '-')
        putStrLn $ "    Image:   " ++ (url album) ++ "/" ++ (fromSql namesv)
        itags <- quickQuery dbh "SELECT tagid FROM ImageTags where imageid = ?"
                            [idsv]
@@ -103,6 +103,5 @@ fmtCap label (Just captxt) =
        clines <- run $ echo captxt -|- ("fmt", ["-w", show linewidth])
        putStrLn (head clines)
        putStr ((unlines . map ((replicate (length label) ' ') ++)) (tail clines))
-       unless (isSuffixOf "\n" (last clines)) (putStrLn "")
 
     where linewidth = 70 - (length label)
