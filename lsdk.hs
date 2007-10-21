@@ -33,7 +33,7 @@ processIt (dbpath:albumPaths) = handleSqlError $ do
     disconnect dbh
 
 processIt _ = do
-    putStrLn "Syntax: dkls dbpath.db [album [album...]]"
+    putStrLn "Syntax: lsdk dbpath.db [album [album...]]"
     exitFailure
 
 loadAlbums :: Connection -> [String] -> IO [Album]
