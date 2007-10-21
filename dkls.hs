@@ -13,7 +13,7 @@ import System.Environment
 type Tag = (Integer, String)
 type TagMap = Map.Map Integer Tag
 data Album = Album {dirid :: Integer, url :: String, aDate :: String,
-                    aCaption :: String}
+                    aCaption :: Maybe String}
      deriving (Eq, Read, Show, Ord)
 
 main = do
