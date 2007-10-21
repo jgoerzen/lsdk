@@ -80,3 +80,20 @@ procAlbum dbh tags album =
        putStrLn $ "Images:  " ++ show (length (imagesSV))
        putStrLn ""
 
+       mapM_ (procImage dbh tags album) imagesSV
+
+procImage :: Connection -> TagMap -> Album -> [SqlValue] -> IO ()
+procImage dbh tags album [idsv, namesv, captionsv, datetimesv] =
+    do putStrLn $ "    " ++ (replicate 60 '-')
+       putStrLn $ "    Image:   " ++ (url album) ++ "/" ++ (fromSql namesv)
+       itags <- quickQuery dbh "SELECT tagid FROM ImageTags where imageid = ?"
+                           [idsv]
+       mapM_ (\[t] -> putStrLn $ "    Tag:     " ++ getTagName tags (fromSql t))
+             itags
+       putStrLn $ "    Caption: " ++ (case fromSql captionsv of
+                                           Just x -> x
+                                           Nothing -> "")
+
+       
+procImage _ _ _ _ = fail "Invalid procImage args"
+
