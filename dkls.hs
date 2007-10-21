@@ -5,6 +5,7 @@ import System.IO
 import System.Exit
 import Database.HDBC
 import Database.HDBC.Sqlite3
+import Control.Exception(evaluate)
 import qualified Data.Map as Map
 import Data.List
 
@@ -24,8 +25,9 @@ processIt [dbpath] = processIt [dbpath, "/"]
 processIt (dbpath:albumPaths) = handleSqlError $ do
     dbh <- connectSqlite3 dbpath
     tags <- loadTags dbh 
+    evaluate (Map.size tags)
     albums <- loadAlbums dbh albumPaths
-    print albums
+    mapM_ (procAlbum dbh tags) albums
     disconnect dbh
 
 processIt _ = do
@@ -62,3 +64,19 @@ getTagName map id =
          Nothing -> error $ "Couldn't find tag id " ++ show id
          Just (0, name) -> name
          Just (pid, name) -> getTagName map pid ++ "/" ++ name
+
+procAlbum :: Connection -> TagMap -> Album -> IO ()
+procAlbum dbh tags album =
+    do putStrLn (replicate 70 '=')
+       putStrLn $ "Album:   " ++ url album
+       putStrLn ""
+       putStrLn $ "Date:    " ++ aDate album
+       putStrLn $ "Caption: " ++ (case aCaption album of 
+                                       Just x -> x
+                                       Nothing -> "")
+
+       imagesSV <- quickQuery dbh "SELECT id, name, caption, datetime FROM Images WHERE dirid = ?" [toSql (dirid album)]
+
+       putStrLn $ "Images:  " ++ show (length (imagesSV))
+       putStrLn ""
+
