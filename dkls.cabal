@@ -14,5 +14,5 @@ Build-Depends: base, HDBC, HDBC-sqlite3
 
 Executable: dkls
 Main-Is: dkls.hs
-GHC-Options: -O2
+GHC-Options: -O2 -threaded
 

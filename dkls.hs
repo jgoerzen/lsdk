@@ -6,6 +6,8 @@ import System.Exit
 import Database.HDBC
 import Database.HDBC.Sqlite3
 import Control.Exception(evaluate)
+import Control.Concurrent(forkIO)
+import System.Process
 import qualified Data.Map as Map
 import Data.List
 
@@ -71,9 +73,7 @@ procAlbum dbh tags album =
        putStrLn $ "Album:   " ++ url album
        putStrLn ""
        putStrLn $ "Date:    " ++ aDate album
-       putStrLn $ "Caption: " ++ (case aCaption album of 
-                                       Just x -> x
-                                       Nothing -> "")
+       fmtCap "Caption: " (aCaption album)
 
        imagesSV <- quickQuery dbh "SELECT id, name, caption, datetime FROM Images WHERE dirid = ?" [toSql (dirid album)]
 
@@ -90,10 +90,23 @@ procImage dbh tags album [idsv, namesv, captionsv, datetimesv] =
                            [idsv]
        mapM_ (\[t] -> putStrLn $ "    Tag:     " ++ getTagName tags (fromSql t))
              itags
-       putStrLn $ "    Caption: " ++ (case fromSql captionsv of
-                                           Just x -> x
-                                           Nothing -> "")
+       fmtCap "    Caption: " (fromSql captionsv)
+       putStr ""
 
-       
 procImage _ _ _ _ = fail "Invalid procImage args"
 
+fmtCap :: String -> Maybe String -> IO ()
+fmtCap _ Nothing = return ()
+fmtCap label (Just captxt) = 
+    do putStr label
+       (hin, hout, herr, pid) <- runInteractiveProcess "fmt"
+          ["-w", show linewidth] Nothing Nothing
+       forkIO $ hPutStr hin captxt
+       c <- hGetContents hout
+       putStr c
+       rc <- waitForProcess pid
+       case rc of
+            ExitSuccess -> return ()
+            x -> fail $ "Error from fmt -w " ++ show linewidth ++ ": " ++ show x
+
+    where linewidth = 70 - (length captxt)
