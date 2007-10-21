@@ -106,7 +106,8 @@ fmtCap label (Just captxt) =
        forkIO $ hPutStr hin captxt
        c <- hGetContents hout
        let clines = lines c
-       putStr ((unlines . map ((replicate (length label) ' ') ++) . lines) c)
+       putStrLn (head clines)
+       putStr ((unlines . map ((replicate (length label) ' ') ++)) (tail clines))
        unless (isSuffixOf "\n" c) (putStrLn "")
        rc <- waitForProcess pid
        case rc of
