@@ -7,6 +7,7 @@ import Database.HDBC
 import Database.HDBC.Sqlite3
 import Control.Exception(evaluate)
 import Control.Concurrent(forkIO)
+import Control.Monad(unless)
 import System.Process
 import qualified Data.Map as Map
 import Data.List
@@ -91,7 +92,7 @@ procImage dbh tags album [idsv, namesv, captionsv, datetimesv] =
        mapM_ (\[t] -> putStrLn $ "    Tag:     " ++ getTagName tags (fromSql t))
              itags
        fmtCap "    Caption: " (fromSql captionsv)
-       putStr ""
+       putStrLn ""
 
 procImage _ _ _ _ = fail "Invalid procImage args"
 
@@ -104,9 +105,10 @@ fmtCap label (Just captxt) =
        forkIO $ hPutStr hin captxt
        c <- hGetContents hout
        putStr c
+       unless (isSuffixOf "\n" c) (putStrLn "")
        rc <- waitForProcess pid
        case rc of
             ExitSuccess -> return ()
             x -> fail $ "Error from fmt -w " ++ show linewidth ++ ": " ++ show x
 
-    where linewidth = 70 - (length captxt)
+    where linewidth = 70 - (length label)
