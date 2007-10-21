@@ -3,12 +3,11 @@
 
 import System.IO
 import System.Exit
-import Database.HDBC
+import Database.HDBC hiding (run)
 import Database.HDBC.Sqlite3
 import Control.Exception(evaluate)
-import Control.Concurrent(forkIO)
 import Control.Monad(unless)
-import System.Process
+import HSH
 import qualified Data.Map as Map
 import Data.List
 
@@ -101,17 +100,9 @@ fmtCap _ Nothing = return ()
 fmtCap label (Just "") = return ()
 fmtCap label (Just captxt) = 
     do putStr label
-       (hin, hout, herr, pid) <- runInteractiveProcess "fmt"
-          ["-w", show linewidth] Nothing Nothing
-       forkIO $ hPutStr hin captxt
-       c <- hGetContents hout
-       let clines = lines c
+       clines <- run $ echo captxt -|- ("fmt", ["-w", show linewidth])
        putStrLn (head clines)
        putStr ((unlines . map ((replicate (length label) ' ') ++)) (tail clines))
-       unless (isSuffixOf "\n" c) (putStrLn "")
-       rc <- waitForProcess pid
-       case rc of
-            ExitSuccess -> return ()
-            x -> fail $ "Error from fmt -w " ++ show linewidth ++ ": " ++ show x
+       unless (isSuffixOf "\n" (last clines)) (putStrLn "")
 
     where linewidth = 70 - (length label)
