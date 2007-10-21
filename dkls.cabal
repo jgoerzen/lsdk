@@ -1,0 +1,18 @@
+Name: dlks
+Version: 1.0.0
+License: GPL
+Maintainer: John Goerzen <jgoerzen@complete.org>
+Author: John Goerzen
+Stability: Stable
+Copyright: Copyright (c) 2007 John Goerzen
+license-file: COPYRIGHT
+extra-source-files: COPYING
+homepage: http://hg.complete.org/dkls
+Category: Database
+Synopsis: Extract information from Digikam database
+Build-Depends: base, HDBC, HDBC-sqlite3
+
+Executable: dkls
+Main-Is: dkls.hs
+GHC-Options: -O2
+
