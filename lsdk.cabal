@@ -10,7 +10,7 @@ extra-source-files: COPYING
 homepage: http://hg.complete.org/lsdk
 Category: Database
 Synopsis: Extract information from Digikam database
-Build-Depends: base, HDBC, HDBC-sqlite3, HSH
+Build-Depends: base, HDBC, HDBC-sqlite3, HSH, containers
 
 Executable: lsdk
 Main-Is: lsdk.hs

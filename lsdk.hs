@@ -1,4 +1,4 @@
-{- Copyright (c) 2007 John Goerzen <jgoerzen@complete.org>
+{- Copyright (c) 2007-2008 John Goerzen <jgoerzen@complete.org>
    Please see the COPYRIGHT file -}
 
 import System.IO
@@ -23,6 +23,7 @@ main = do
     args <- getArgs
     processIt args
 
+processIt ("-t":xs) = processItByTag xs
 processIt [dbpath] = processIt [dbpath, "/"]
 processIt (dbpath:albumPaths) = handleSqlError $ do
     dbh <- connectSqlite3 dbpath
@@ -32,9 +33,24 @@ processIt (dbpath:albumPaths) = handleSqlError $ do
     mapM_ (procAlbum dbh tags) albums
     disconnect dbh
 
-processIt _ = do
+processIt _ = syntaxError
+
+syntaxError = do 
     putStrLn "Syntax: lsdk dbpath.db [album [album...]]"
+    putStrLn "Tag view: lsdk -t dbpath.db tag [tag...]"
     exitFailure
+
+processItByTag (dbpath:tagNames) = handleSqlError $ do
+   dbh <- connectSqlite3 dbpath
+   tags <- loadTags dbh
+   evaluate (Map.size tags)
+   let ourTags = Map.filter selectTag tags
+   albums <- loadAlbums dbh ["/"]
+
+   
+   where ourTags = FIXME
+
+processItByTag _ = syntaxError
 
 loadAlbums :: Connection -> [String] -> IO [Album]
 loadAlbums dbh albumPaths = 
@@ -67,25 +83,36 @@ getTagName map id =
          Just (0, name) -> name
          Just (pid, name) -> getTagName map pid ++ "/" ++ name
 
+albumHeaderStr album =
+    unlines $ 
+            [replicate 70 '=',
+             "Album:  " ++ url album,
+             "",
+             "Date:   " ++ aDate album,
+             fmtCap "Caption: " (aCaption album)]
+    
+imagesHeaderStr imagesSV =
+    unlines $ ["Images:  " ++ show (length (imagesSV)),
+               ""]
+
 procAlbum :: Connection -> TagMap -> Album -> IO ()
 procAlbum dbh tags album =
-    do putStrLn (replicate 70 '=')
-       putStrLn $ "Album:   " ++ url album
-       putStrLn ""
-       putStrLn $ "Date:    " ++ aDate album
-       fmtCap "Caption: " (aCaption album)
+    do putStr $ albumHeaderStr album
 
        imagesSV <- quickQuery dbh "SELECT id, name, caption, datetime FROM Images WHERE dirid = ?" [toSql (dirid album)]
 
-       putStrLn $ "Images:  " ++ show (length (imagesSV))
-       putStrLn ""
+       putStr $ imagesHeaderStr imagesSV
 
        mapM_ (procImage dbh tags album) imagesSV
+
+procAlbumTagView :: Connection -> TagMap -> Album -> IO ()
+procAlbumTagView 
 
 procImage :: Connection -> TagMap -> Album -> [SqlValue] -> IO ()
 procImage dbh tags album [idsv, namesv, captionsv, datetimesv] =
     do putStrLn $ "    " ++ (replicate 65 '-')
        putStrLn $ "    Image:   " ++ (url album) ++ "/" ++ (fromSql namesv)
+       putStrLn $ "    Date:    " ++ (fromSql datetimesv)
        itags <- quickQuery dbh "SELECT tagid FROM ImageTags where imageid = ?"
                            [idsv]
        mapM_ (\[t] -> putStrLn $ "    Tag:     " ++ getTagName tags (fromSql t))
